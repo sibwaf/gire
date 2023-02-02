@@ -32,17 +32,21 @@ func Main() {
 }
 
 func synchronize(appConfig config.ApplicationConfig, sourceConfig []*config.Source) {
+	status := []StatusEntry{}
+
 	for _, source := range sourceConfig {
 		// todo: move to app startup?
-		provider := providers.CreateProviderFor(*source)
-		if provider == nil {
-			log.Printf("No provider available for source type %s", source.Type)
+		provider, err := providers.CreateProviderFor(*source)
+		if err != nil {
+			status = append(status, MakeStatusEntry(source.Url, err))
+			log.Printf("Failed to get a provider for source %s:\n%v\n", source.Url, err)
 			continue
 		}
 
 		urls, err := provider.ListRepositories()
 		if err != nil {
-			log.Printf("Failed to list repository URLs for source %s:\n%v", source.Url, err)
+			status = append(status, MakeStatusEntry(source.Url, err))
+			log.Printf("Failed to list repository URLs for source %s:\n%v\n", source.Url, err)
 			continue
 		}
 
@@ -61,8 +65,12 @@ func synchronize(appConfig config.ApplicationConfig, sourceConfig []*config.Sour
 			} else if updated {
 				log.Println("Updated repository:", url)
 			}
+
+			status = append(status, MakeStatusEntry(url, err))
 		}
 	}
+
+	SaveStatus(path.Join(appConfig.RepositoryPath, ".gire.json"), status)
 }
 
 func checkTextMatchesFilter(s string, include [](*regexp.Regexp), exclude [](*regexp.Regexp)) bool {
