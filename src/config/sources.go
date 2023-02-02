@@ -2,16 +2,19 @@ package config
 
 import (
 	"os"
+	"regexp"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Source struct {
-	GroupName string
-	Url       string
-	Type      string
-	Include   []string
-	Exclude   []string
+	GroupName  string
+	Url        string
+	Type       string
+	RawInclude []string           `yaml:"include"`
+	RawExclude []string           `yaml:"exclude"`
+	Include    [](*regexp.Regexp) `yaml:"_include_internal"`
+	Exclude    [](*regexp.Regexp) `yaml:"_exclude_internal"`
 }
 
 const (
@@ -37,6 +40,24 @@ func ReadSourceList(path string) ([]*Source, error) {
 		}
 		if source.Type == "" {
 			source.Type = SOURCE_TYPE_REPOSITORY
+		}
+
+		source.Include = make([](*regexp.Regexp), 0, len(source.RawInclude))
+		for _, regexRaw := range source.RawInclude {
+			regex, err := regexp.Compile(regexRaw)
+			if err != nil {
+				return nil, err
+			}
+			source.Include = append(source.Include, regex)
+		}
+
+		source.Exclude = make([](*regexp.Regexp), 0, len(source.RawExclude))
+		for _, regexRaw := range source.RawExclude {
+			regex, err := regexp.Compile(regexRaw)
+			if err != nil {
+				return nil, err
+			}
+			source.Exclude = append(source.Exclude, regex)
 		}
 	}
 

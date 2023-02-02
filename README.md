@@ -19,7 +19,7 @@ GIRE_REPOSITORY_PATH="repositories"
   url: https://github.com/sibwaf
   type: github
   include:
-    - "*"
+    - ".*"
   exclude:
     - "test"
 

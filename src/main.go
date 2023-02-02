@@ -3,6 +3,7 @@ package src
 import (
 	"log"
 	"path"
+	"regexp"
 
 	"github.com/robfig/cron"
 	"github.com/sibwaf/gire/src/config"
@@ -48,6 +49,10 @@ func synchronize(appConfig config.ApplicationConfig, sourceConfig []*config.Sour
 		basePath := path.Join(appConfig.RepositoryPath, source.GroupName)
 
 		for _, url := range urls {
+			if !checkTextMatchesFilter(url, source.Include, source.Exclude) {
+				continue
+			}
+
 			updated := true // todo
 
 			err = SynchronizeRepository(basePath, url)
@@ -58,4 +63,19 @@ func synchronize(appConfig config.ApplicationConfig, sourceConfig []*config.Sour
 			}
 		}
 	}
+}
+
+func checkTextMatchesFilter(s string, include [](*regexp.Regexp), exclude [](*regexp.Regexp)) bool {
+	matchesInclude := len(include) == 0 || checkTextMatchesAny(s, include)
+	return matchesInclude && !checkTextMatchesAny(s, exclude)
+}
+
+func checkTextMatchesAny(s string, regexps [](*regexp.Regexp)) bool {
+	for _, regex := range regexps {
+		if regex.MatchString(s) {
+			return true
+		}
+	}
+
+	return false
 }
