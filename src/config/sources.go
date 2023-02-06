@@ -9,17 +9,21 @@ import (
 )
 
 type Source struct {
-	GroupName  string `yaml:"groupName"`
-	Url        string
-	Type       string
+	GroupName string `yaml:"groupName"`
+	Url       string
+	Type      string
+	AuthToken string `yaml:"authToken"`
+
 	RawInclude []string           `yaml:"include"`
-	RawExclude []string           `yaml:"exclude"`
 	Include    [](*regexp.Regexp) `yaml:"_include_internal"`
+
+	RawExclude []string           `yaml:"exclude"`
 	Exclude    [](*regexp.Regexp) `yaml:"_exclude_internal"`
 }
 
 const (
 	SOURCE_TYPE_REPOSITORY = "repository"
+	SOURCE_TYPE_GITHUB     = "github"
 )
 
 func ReadSourceList(path string) ([]*Source, error) {
