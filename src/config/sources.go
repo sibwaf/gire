@@ -8,7 +8,7 @@ import (
 )
 
 type Source struct {
-	GroupName  string
+	GroupName  string `yaml:"groupName"`
 	Url        string
 	Type       string
 	RawInclude []string           `yaml:"include"`
