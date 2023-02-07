@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"reflect"
 	"regexp"
 
 	"gopkg.in/yaml.v3"
@@ -35,6 +36,15 @@ func ReadSourceList(path string) ([]*Source, error) {
 	}
 
 	for _, source := range result {
+		sourceValue := reflect.ValueOf(source).Elem()
+
+		for i := 0; i < sourceValue.NumField(); i++ {
+			field := sourceValue.Field(i)
+			if field.Kind() == reflect.String && field.String() != "" {
+				field.SetString(os.ExpandEnv(field.String()))
+			}
+		}
+
 		if source.GroupName == "" {
 			source.GroupName = "_"
 		}
