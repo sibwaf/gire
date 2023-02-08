@@ -1,16 +1,19 @@
 #!/bin/sh
 
-# Create user for Git SSH server
+# Initialize required environment variables
 
 if [ -z "$GIRE_GIT_USER" ]; then
-    git_user_name="git"
-else
-    git_user_name="$GIRE_GIT_USER"
+    export GIRE_GIT_USER="git"
+fi
+if [ -z "$GIRE_REPOSITORY_PATH" ]; then
+    export GIRE_REPOSITORY_PATH="repositories"
 fi
 
-adduser -D -s /bin/sh "$git_user_name"
+# Create user for Git SSH server
 
-git_user_home=$(su "$git_user_name" -s /bin/sh -c "echo \$HOME")
+adduser -D -s /bin/sh "$GIRE_GIT_USER"
+
+git_user_home=$(su "$GIRE_GIT_USER" -s /bin/sh -c "echo \$HOME")
 
 # Start SSH-agent and import identity keys for current user for pulling repositories to Gire
 
@@ -56,7 +59,7 @@ done
 
 # Expose configuration environment variables to SSH connections
 
-echo "$GIRE_REPOSITORY_PATH" > /run/gire_repository_path
+echo $(mkdir -p "$GIRE_REPOSITORY_PATH"; cd "$GIRE_REPOSITORY_PATH"; pwd) > /run/gire_repository_path
 
 # Start SSHD in background
 
@@ -66,7 +69,7 @@ for f in $(find /keys -type f -maxdepth 1); do
     sshd_keys="$sshd_keys -h $f"
 done
 
-su "$git_user_name" -s /bin/sh -c "/usr/sbin/sshd $sshd_keys"
+su "$GIRE_GIT_USER" -s /bin/sh -c "/usr/sbin/sshd $sshd_keys"
 
 # Start the application
 
