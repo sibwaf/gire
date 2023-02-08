@@ -1,14 +1,16 @@
 package providers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/sibwaf/gire/src/util"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -36,15 +38,17 @@ func (p GithubProvider) ListRepositories() ([]string, error) {
 		return nil, errors.New(fmt.Sprintf("Failed to extract user/organization name from url %s", p.Url))
 	}
 
-	var wg sync.WaitGroup
+	wg, ctx := errgroup.WithContext(context.Background())
 	repositories := make(chan githubRepository)
 
-	wg.Add(1)
-	go callGithubApi(fmt.Sprintf("%s/users/%s/repos", GITHUB_API_HOST, name), p.AuthToken, repositories, &wg)
+	wg.Go(func() error {
+		return callGithubApi(fmt.Sprintf("%s/users/%s/repos", GITHUB_API_HOST, name), p.AuthToken, repositories, ctx)
+	})
 
 	if p.AuthToken != "" {
-		wg.Add(1)
-		go callGithubApi(fmt.Sprintf("%s/user/repos", GITHUB_API_HOST), p.AuthToken, repositories, &wg)
+		wg.Go(func() error {
+			return callGithubApi(fmt.Sprintf("%s/user/repos", GITHUB_API_HOST), p.AuthToken, repositories, ctx)
+		})
 	}
 
 	go func() {
@@ -63,7 +67,7 @@ func (p GithubProvider) ListRepositories() ([]string, error) {
 		result.Add(repository.SshUrl)
 	}
 
-	return result.ToSlice(), nil
+	return result.ToSlice(), wg.Wait()
 }
 
 func extractName(url string) string {
@@ -77,11 +81,8 @@ func extractName(url string) string {
 	return ""
 }
 
-// todo: error handling
 // todo: ratelimit handling?
-func callGithubApi(url string, token string, repositories chan githubRepository, wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func callGithubApi(url string, token string, repositories chan githubRepository, ctx context.Context) error {
 	page := 1
 
 	for true {
@@ -89,7 +90,7 @@ func callGithubApi(url string, token string, repositories chan githubRepository,
 
 		req, err := http.NewRequest("GET", fmt.Sprintf("%s?%s", url, queryParams), nil)
 		if err != nil {
-			return
+			return err
 		}
 
 		if token != "" {
@@ -98,8 +99,13 @@ func callGithubApi(url string, token string, repositories chan githubRepository,
 
 		res, err := http.DefaultClient.Do(req)
 		if err != nil || res.StatusCode != 200 {
+			if err == nil {
+				text, _ := io.ReadAll(res.Body)
+				err = errors.New(fmt.Sprintf("HTTP %d: %s", res.StatusCode, text))
+			}
+
 			res.Body.Close()
-			return
+			return err
 		}
 
 		parsedResponse := make([]githubRepository, 0)
@@ -111,9 +117,16 @@ func callGithubApi(url string, token string, repositories chan githubRepository,
 		}
 
 		for _, repository := range parsedResponse {
-			repositories <- repository
+			select {
+			case repositories <- repository:
+				continue
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		}
 
 		page += 1
 	}
+
+	return nil
 }
