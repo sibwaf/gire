@@ -4,10 +4,26 @@ Gire ("git reflector", read as "gear") is a minimalistic read-only Git repositor
 
 ## Configruation
 
-```
+Gire is configured using only environment variables as it is supposed to be always running in a container.
+
+Available options with their default values:
+```sh
+# Unix user inside the container which will be used for providing access
+# to Gire's repositories over SSH: GIRE_GIT_USER@address:repository
+#
+# Used only on container start - see entrypoint.sh
 GIRE_GIT_USER="git"
-GIRE_SCAN_CRON="@daily"
+
+# Cron expression for source scanning / repository updates
+# Format: seconds minutes hours day-of-month month day-of-week
+#
+# See https://pkg.go.dev/github.com/robfig/cron?utm_source=godoc#hdr-CRON_Expression_Format
+GIRE_CRON="@daily"
+
+# Path to source configuration file
 GIRE_SOURCES_PATH="sources.yaml"
+
+# Path to directory where all repositories will be stored
 GIRE_REPOSITORY_PATH="repositories"
 ```
 
@@ -15,18 +31,41 @@ GIRE_REPOSITORY_PATH="repositories"
 
 `sources.yaml`
 ```yaml
-- groupName: gh-source-1
-  url: https://github.com/sibwaf
+- url: git@github.com:sibwaf/gire.git
+
+- url: https://github.com/sibwaf
   type: github
+  groupName: gh-source-1
   authToken: 12345
   include:
     - ".*"
   exclude:
     - "test"
+```
 
-- groupName: _
-  type: repository
-  url: git@github.com:sibwaf/gire.git
+All properties are optional excluding `url`.
+
+- `url` - URL to the repository, behavior differs based on `type`
+- `type`
+  - `type: repository` - default value, supports any `url` value which can be used in `git clone $URL`
+  - `type: github` - integration with GitHub to effortlessly mirror multiple repositories at once
+- `groupName` - subdirectory of `GIRE_REPOSITORY_PATH` to store all repositories from this source; for `type: repository` default value is `_`
+- `authToken` - authentication token for integrations, supports environment variable expansion: `authToken: $GITHUB_TOKEN`
+- `include` - regular expressions for filtering URLs in multi-repository sources; empty `include` means "take everything"
+- `exclude` - regular expressions for excluding URLs in multi-repository sources; takes priority over `include`
+
+All expressions in `include` / `exclude` lists are joined using `OR`:
+```yaml
+# If the source provides URLs test0, test1, test2:
+# test0 - ignore (missing in includes)
+# test1 - mirror (present in includes, missing in excludes)
+# test2 - ignore (exclude takes priority)
+
+include:
+  - "test1"
+  - "test2"
+exclude:
+  - "test2"
 ```
 
 ## Setting up SSH keys
