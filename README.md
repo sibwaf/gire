@@ -2,6 +2,52 @@
 
 Gire ("git reflector", read as "gear") is a minimalistic read-only Git repository mirroring service for self-hosting.
 
+## Quickstart
+
+```sh
+# Clone and build
+
+git clone git@github.com:sibwaf/gire
+
+cd gire
+
+docker build -t gire .
+
+# Prepare configuration
+
+mkdir -p run
+
+ssh-keygen -t ed25519 -f run/gire_ed25519 -P ""
+sudo chown git:git run/gire_ed25519
+sudo chmod 755 run/gire_ed25519
+
+ssh-keyscan github.com > run/github.pub
+
+ssh-add -L > run/me.pub
+
+echo "- url: git@github.com:sibwaf/gire" > run/sources.yaml
+
+# Run in background
+
+docker run --rm -d --name gire \
+    -v "$(pwd)/run/repositories:/app/repositories" \
+    -v "$(pwd)/run/sources.yaml:/app/sources.yaml:ro" \
+    -v "$(pwd)/run/gire_ed25519:/keys/id:ro" \
+    -v "$(pwd)/run/github.pub:/keys/trusted/github:ro" \
+    -v "$(pwd)/run/me.pub:/keys/authorized/me:ro" \
+    -e GIRE_CRON="0 * * * * *" \
+    -p 122:22 \
+    gire
+
+# Watch the logs to catch the moment when repository gets mirrored
+
+docker logs -f gire
+
+# Try cloning it back from Gire
+
+git clone git@[localhost:122]:_/gire run/gire
+```
+
 ## Configruation
 
 Gire is configured using only environment variables as it is supposed to be always running in a container.
