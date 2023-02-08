@@ -8,15 +8,23 @@ import (
 	"strings"
 )
 
-func SynchronizeRepository(baseDir string, url string) error {
+type SyncResult string
+
+const (
+	SYNC_RESULT_OK       SyncResult = "ok"
+	SYNC_RESULT_UPTODATE SyncResult = "uptodate"
+	SYNC_RESULT_FAIL     SyncResult = "fail"
+)
+
+func SynchronizeRepository(baseDir string, url string) (SyncResult, error) {
 	err := os.MkdirAll(baseDir, os.ModePerm)
 	if err != nil {
-		return err
+		return SYNC_RESULT_FAIL, err
 	}
 
 	repositoryName := extractRepositoryName(url)
 	if repositoryName == "" {
-		return errors.New("Failed to extract repository name: " + url)
+		return SYNC_RESULT_FAIL, errors.New("Failed to extract repository name: " + url)
 	}
 
 	repositoryName = repositoryName + ".git"
@@ -26,7 +34,7 @@ func SynchronizeRepository(baseDir string, url string) error {
 		return cloneRepository(url, baseDir, repositoryName)
 	}
 
-	return syncRepository(repositoryDir)
+	return updateRepository(repositoryDir)
 }
 
 func extractRepositoryName(url string) string {
@@ -54,26 +62,38 @@ func checkRepository(path string) bool {
 	return cmd.Run() == nil
 }
 
-func cloneRepository(url string, baseDir string, name string) error {
+func cloneRepository(url string, baseDir string, name string) (SyncResult, error) {
 	cmd := exec.Command("git", "clone", "--mirror", url, name)
 	cmd.Dir = baseDir
 
 	data, err := cmd.CombinedOutput()
-	if err != nil && data != nil {
-		return errors.New(strings.TrimSpace(string(data)))
+	if err != nil {
+		if data != nil {
+			return SYNC_RESULT_FAIL, errors.New(strings.TrimSpace(string(data)))
+		}
+
+		return SYNC_RESULT_FAIL, err
 	}
 
-	return err
+	return SYNC_RESULT_OK, nil
 }
 
-func syncRepository(path string) error {
+func updateRepository(path string) (SyncResult, error) {
 	cmd := exec.Command("git", "remote", "update", "--prune")
 	cmd.Dir = path
 
 	data, err := cmd.CombinedOutput()
-	if err != nil && data != nil {
-		return errors.New(strings.TrimSpace(string(data)))
+	if err != nil {
+		if data != nil {
+			return SYNC_RESULT_FAIL, errors.New(strings.TrimSpace(string(data)))
+		}
+
+		return SYNC_RESULT_FAIL, err
 	}
 
-	return err
+	if len(data) > 0 {
+		return SYNC_RESULT_OK, nil
+	} else {
+		return SYNC_RESULT_UPTODATE, nil
+	}
 }

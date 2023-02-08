@@ -59,13 +59,14 @@ func synchronize(appConfig config.ApplicationConfig, sourceConfig []*config.Sour
 				continue
 			}
 
-			updated := true // todo
-
-			err = SynchronizeRepository(basePath, url)
-			if err != nil {
-				log.Printf("Failed to synchronize repository: %s\n%v\n", url, err)
-			} else if updated {
+			result, err := SynchronizeRepository(basePath, url)
+			switch result {
+			case SYNC_RESULT_OK:
 				log.Println("Updated repository:", url)
+			case SYNC_RESULT_UPTODATE:
+				log.Println("Already up-to-date:", url)
+			default:
+				log.Printf("Failed to synchronize repository: %s\n%v\n", url, err)
 			}
 
 			status = append(status, MakeStatusEntry(url, err))
