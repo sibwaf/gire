@@ -165,3 +165,18 @@ By default, `groupName` value will be automatically extracted from the URL: `htt
 See also:
 - [https://docs.github.com/en/rest/repos/repos#list-repositories-for-a-user]
 - [https://docs.github.com/en/rest/repos/repos#list-repositories-for-the-authenticated-user]
+
+## Status reporting
+
+Gire reports synchronization status to `$GIRE_REPOSITORY_PATH/.gire.json` which looks like this:
+
+```json
+[
+  {
+    "Timestamp": "2023-02-08T18:48:03.059294675Z",
+    "Url": "git@github.com:sibwaf/gire",
+    "Success": true,
+    "Err": ""
+  }
+]
+```
