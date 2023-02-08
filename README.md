@@ -18,6 +18,7 @@ GIRE_REPOSITORY_PATH="repositories"
 - groupName: gh-source-1
   url: https://github.com/sibwaf
   type: github
+  authToken: 12345
   include:
     - ".*"
   exclude:
@@ -59,3 +60,21 @@ Cloning repositories from Gire requires having client keys in the `/home/git/.ss
 2. File mounts into `/keys/authorized`. Each file might contain any number of keys, filenames don't matter.
 
 All of those keys will be appended into `/home/git/.ssh/authorized_keys` at start.
+
+## Integrations
+
+### GitHub
+
+Sources with `type: github` will use the provided URL to list all available repositories and synchronize all of them. Both users and organizations are supported.
+
+To allow *listing* private repositories and/or raise the request rate limit you can provide your personal access token using the `authToken` property. Notice: Gire will pull all repositories using SSH, so you still need to have SSH keys configured to pull private repositories.
+
+The URL is also used as prefix filter, so if you have permissions for repositories `u1/aaaa` and `u2/bbbb`:
+- `url: https://github.com/u1` will synchronize `u1/aaaa` only
+- `url: https://github.com/u2` will synchronize `u2/bbbb` only
+
+By default, `groupName` value will be automatically extracted from the URL: `https://github.com/USERNAME` -> `USERNAME`. You can override it by providing your own value in the source configuration.
+
+See also:
+[https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repositories-for-a-user]
+[https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repositories-for-the-authenticated-user]
