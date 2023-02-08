@@ -8,6 +8,7 @@ import (
 	"github.com/robfig/cron"
 	"github.com/sibwaf/gire/src/config"
 	"github.com/sibwaf/gire/src/providers"
+	"github.com/sibwaf/gire/src/util"
 )
 
 func Main() {
@@ -50,7 +51,8 @@ func synchronize(appConfig config.ApplicationConfig, sourceConfig []*config.Sour
 			continue
 		}
 
-		basePath := path.Join(appConfig.RepositoryPath, source.GroupName)
+		groupName := util.Coalesce(source.GroupName, provider.GetGroupName(), "_")
+		basePath := path.Join(appConfig.RepositoryPath, groupName)
 
 		for _, url := range urls {
 			if !checkTextMatchesFilter(url, source.Include, source.Exclude) {

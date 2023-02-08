@@ -8,7 +8,7 @@ import (
 )
 
 type Provider interface {
-	// GetGroupName() string // todo?
+	GetGroupName() string
 	ListRepositories() ([]string, error)
 }
 

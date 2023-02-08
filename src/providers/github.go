@@ -26,6 +26,10 @@ type githubRepository struct {
 	SshUrl  string `json:"ssh_url"`
 }
 
+func (p GithubProvider) GetGroupName() string {
+	return extractName(p.Url)
+}
+
 func (p GithubProvider) ListRepositories() ([]string, error) {
 	name := extractName(p.Url)
 	if name == "" {

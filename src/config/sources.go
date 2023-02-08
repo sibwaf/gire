@@ -49,9 +49,6 @@ func ReadSourceList(path string) ([]*Source, error) {
 			}
 		}
 
-		if source.GroupName == "" {
-			source.GroupName = "_"
-		}
 		if source.Type == "" {
 			source.Type = SOURCE_TYPE_REPOSITORY
 		}
