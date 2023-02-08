@@ -73,6 +73,8 @@ GIRE_SOURCES_PATH="sources.yaml"
 GIRE_REPOSITORY_PATH="repositories"
 ```
 
+Default working directory in the container is `/app`
+
 ## Setting up sources
 
 `sources.yaml`
@@ -161,5 +163,5 @@ The URL is also used as prefix filter, so if you have permissions for repositori
 By default, `groupName` value will be automatically extracted from the URL: `https://github.com/USERNAME` -> `USERNAME`. You can override it by providing your own value in the source configuration.
 
 See also:
-[https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repositories-for-a-user]
-[https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-repositories-for-the-authenticated-user]
+- [https://docs.github.com/en/rest/repos/repos#list-repositories-for-a-user]
+- [https://docs.github.com/en/rest/repos/repos#list-repositories-for-the-authenticated-user]
