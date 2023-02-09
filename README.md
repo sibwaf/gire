@@ -7,7 +7,7 @@ Gire ("git reflector", read as "gear") is a minimalistic read-only Git repositor
 ```sh
 # Clone and build
 
-git clone git@github.com:sibwaf/gire
+git clone https://github.com/sibwaf/gire
 
 cd gire
 
@@ -25,7 +25,7 @@ ssh-keyscan github.com > run/github.pub
 
 ssh-add -L > run/me.pub
 
-echo "- url: git@github.com:sibwaf/gire" > run/sources.yaml
+echo "- url: https://github.com/sibwaf/gire" > run/sources.yaml
 
 # Run in background
 
@@ -48,7 +48,7 @@ docker logs -f gire
 git clone git@[localhost:122]:_/gire run/gire
 ```
 
-## Configruation
+## Configuration
 
 Gire is configured using only environment variables as it is supposed to be always running in a container.
 
