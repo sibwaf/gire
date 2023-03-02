@@ -56,7 +56,7 @@ func extractRepositoryName(url string) string {
 }
 
 func checkRepository(path string) bool {
-	cmd := exec.Command("git", "show", "--summary")
+	cmd := exec.Command("git", "rev-parse")
 	cmd.Dir = path
 
 	return cmd.Run() == nil
